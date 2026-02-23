@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, jwtVerify, JWTPayload as JoseJWTPayload } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
@@ -12,7 +12,7 @@ if (!JWT_SECRET) {
 const SECRET = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "jewellead_token";
 
-export interface JWTPayload {
+export interface AppJWTPayload extends JoseJWTPayload {
   userId: string;
   email: string;
   shopName: string;
@@ -26,18 +26,18 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-export async function createToken(payload: JWTPayload): Promise<string> {
-  return new SignJWT(payload as unknown as Record<string, unknown>)
+export async function createToken(payload: AppJWTPayload): Promise<string> {
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(SECRET);
 }
 
-export async function verifyToken(token: string): Promise<JWTPayload | null> {
+export async function verifyToken(token: string): Promise<AppJWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    return payload as unknown as JWTPayload;
+    return payload as AppJWTPayload;
   } catch {
     return null;
   }
@@ -55,7 +55,7 @@ export async function setAuthCookie(token: string) {
 
 export async function getAuthUser(
   request?: NextRequest
-): Promise<JWTPayload | null> {
+): Promise<AppJWTPayload | null> {
   let token: string | undefined;
 
   if (request) {
