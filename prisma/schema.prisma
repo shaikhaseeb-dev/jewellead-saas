@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  shopName            String
+  ownerName           String
+  phone               String
+  businessType        String    @default("jewelry")
+  city                String?
+  
+  // Instagram
+  instagramUserId     String?
+  instagramAccessToken String?  // encrypted
+  instagramConnected  Boolean   @default(false)
+  
+  // WhatsApp
+  waPhoneNumberId     String?
+  waAccessToken       String?   // encrypted
+  waBusinessId        String?
+  waConnected         Boolean   @default(false)
+  
+  // Billing (Phase 2 ready)
+  subscriptionStatus  SubscriptionStatus @default(TRIAL)
+  trialEndsAt         DateTime?
+  subscriptionId      String?
+  planId              String?
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  reels               Reel[]
+  leads               Lead[]
+  campaigns           Campaign[]
+  followUpLogs        FollowUpLog[]
+  systemLogs          SystemLog[]
+  
+  @@index([email])
+}
+
+model Reel {
+  id          String   @id @default(cuid())
+  userId      String
+  url         String
+  reelId      String?  // Instagram reel ID
+  productName String
+  category    String
+  price       Float?
+  triggerWord String   @default("interested")
+  active      Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leads       Lead[]
+  
+  @@index([userId])
+  @@index([reelId])
+}
+
+model Lead {
+  id            String     @id @default(cuid())
+  userId        String
+  reelId        String?
+  
+  name          String
+  phone         String
+  city          String?
+  instagramUser String?
+  
+  status        LeadStatus @default(NEW)
+  notes         String?
+  
+  followUpSentAt DateTime?
+  convertedAt    DateTime?
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel          Reel?      @relation(fields: [reelId], references: [id])
+  followUpLogs  FollowUpLog[]
+  
+  @@index([userId])
+  @@index([reelId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FollowUpLog {
+  id        String   @id @default(cuid())
+  userId    String
+  leadId    String
+  type      String   // "dm", "whatsapp", "summary"
+  status    String   // "sent", "failed", "skipped"
+  message   String?
+  error     String?
+  
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([leadId])
+}
+
+model Campaign {
+  id           String         @id @default(cuid())
+  userId       String
+  name         String
+  templateType CampaignType
+  status       CampaignStatus @default(DRAFT)
+  sentCount    Int            @default(0)
+  failedCount  Int            @default(0)
+  sentAt       DateTime?
+  
+  createdAt    DateTime       @default(now())
+  
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  level     LogLevel
+  source    String
+  message   String
+  meta      Json?
+  
+  createdAt DateTime @default(now())
+  
+  user      User?    @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([level])
+  @@index([createdAt])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  NOT_INTERESTED
+  CONVERTED
+  FOLLOW_UP
+}
+
+enum CampaignType {
+  FESTIVAL_OFFER
+  BRIDAL_OFFER
+  GOLD_RATE_DROP
+  NEW_COLLECTION
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENT
+  FAILED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+}
