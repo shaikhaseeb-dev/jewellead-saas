@@ -6,6 +6,7 @@ import { getTemplate } from '@/lib/campaignTemplates';
 import { decrypt } from '@/lib/encryption';
 import { sendWhatsAppTemplate } from '@/lib/whatsapp';
 import { logger } from '@/lib/logger';
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
