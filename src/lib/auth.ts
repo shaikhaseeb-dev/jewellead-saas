@@ -1,10 +1,16 @@
-import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
+import bcrypt from "bcryptjs";
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
-const COOKIE_NAME = 'jewellead_token';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined");
+}
+
+const SECRET = new TextEncoder().encode(JWT_SECRET);
+const COOKIE_NAME = "jewellead_token";
 
 export interface JWTPayload {
   userId: string;
@@ -21,10 +27,10 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export async function createToken(payload: JWTPayload): Promise<string> {
-  return new SignJWT(payload as Record<string, unknown>)
-    .setProtectedHeader({ alg: 'HS256' })
+  return new SignJWT(payload as unknown as Record<string, unknown>)
+    .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime("7d")
     .sign(SECRET);
 }
 
@@ -40,14 +46,16 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 export async function setAuthCookie(token: string) {
   cookies().set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
   });
 }
 
-export async function getAuthUser(request?: NextRequest): Promise<JWTPayload | null> {
+export async function getAuthUser(
+  request?: NextRequest
+): Promise<JWTPayload | null> {
   let token: string | undefined;
 
   if (request) {
