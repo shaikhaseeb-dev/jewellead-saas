@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CAMPAIGN_TEMPLATES } from '@/lib/campaignTemplates';
 import { formatDate } from '@/lib/utils';
-import { Megaphone, Send, CheckCircle2 } from 'lucide-react';
+import { Send, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 type Campaign = {
   id: string;
@@ -20,23 +20,24 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   const fetchCampaigns = async () => {
     const res = await fetch('/api/campaigns');
     const data = await res.json();
-    setCampaigns(data.campaigns || []);
+    setCampaigns(data.campaigns ?? []);
     setLoading(false);
   };
 
   useEffect(() => { fetchCampaigns(); }, []);
 
-  const sendCampaign = async (templateType: string, name: string) => {
-    setSending(templateType);
-    setMessage('');
-    setError('');
+  const showToast = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 4000);
+  };
 
+  const sendCampaign = async (templateType: string) => {
+    setSending(templateType);
     const res = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,101 +45,180 @@ export default function CampaignsPage() {
     });
     const data = await res.json();
     setSending(null);
-
-    if (!res.ok) {
-      setError(data.error || 'Failed to send campaign');
-      return;
-    }
-    setMessage(data.message || `${name} campaign started!`);
+    if (!res.ok) { showToast('error', data.error ?? 'Failed to send'); return; }
+    showToast('success', data.message ?? 'Campaign started!');
     fetchCampaigns();
   };
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="page-title">Campaigns</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Send bulk WhatsApp messages to all your leads with one click
+    <div className="fade-in">
+
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '24px',
+            right: '24px',
+            zIndex: 1000,
+            background: toast.type === 'success' ? '#0A1A0A' : '#1A0A0A',
+            border: `1px solid ${toast.type === 'success' ? 'rgba(134,239,172,0.2)' : 'rgba(252,165,165,0.2)'}`,
+            borderRadius: '12px',
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            animation: 'fadeIn 0.3s ease',
+            maxWidth: '360px',
+          }}
+        >
+          {toast.type === 'success'
+            ? <CheckCircle2 size={16} color="#86EFAC" />
+            : <AlertCircle size={16} color="#FCA5A5" />}
+          <span style={{ fontSize: '13px', color: toast.type === 'success' ? '#86EFAC' : '#FCA5A5' }}>
+            {toast.msg}
+          </span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ marginBottom: '36px' }}>
+        <h1 className="lux-title">Campaigns</h1>
+        <p style={{ color: '#7A756C', marginTop: '6px', fontSize: '13px' }}>
+          Send bulk WhatsApp messages to all your leads with one tap
         </p>
       </div>
 
-      {message && (
-        <div className="mb-6 bg-green-50 text-green-700 px-5 py-4 rounded-2xl border border-green-100 flex items-center gap-2">
-          <CheckCircle2 size={18} />
-          {message}
-        </div>
-      )}
-      {error && (
-        <div className="mb-6 bg-red-50 text-red-600 px-5 py-4 rounded-2xl border border-red-100">
-          {error}
-        </div>
-      )}
-
       {/* Template Cards */}
-      <div className="mb-10">
-        <h2 className="font-display font-semibold text-lg mb-4">Send a Campaign</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {CAMPAIGN_TEMPLATES.map((template) => (
-            <div key={template.type} className="bg-white rounded-2xl border border-border p-6">
-              <div className="text-3xl mb-3">{template.emoji}</div>
-              <h3 className="font-semibold text-lg mb-1">{template.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
-              <div className="bg-muted/50 rounded-xl p-3 mb-4 text-sm text-muted-foreground italic">
-                &ldquo;{template.preview}&rdquo;
-              </div>
-              <button
-                onClick={() => sendCampaign(template.type, template.name)}
-                disabled={!!sending}
-                className="w-full flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors"
+      <div style={{ marginBottom: '40px' }}>
+        <p className="lux-label" style={{ marginBottom: '16px' }}>Send a Campaign</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          {CAMPAIGN_TEMPLATES.map((t) => (
+            <div
+              key={t.type}
+              className="lux-card"
+              style={{ padding: '28px', position: 'relative', overflow: 'hidden' }}
+            >
+              {/* Corner accent */}
+              <div style={{
+                position: 'absolute', top: 0, right: 0,
+                width: '60px', height: '60px',
+                background: 'radial-gradient(circle at top right, rgba(198,167,94,0.05), transparent 70%)',
+                pointerEvents: 'none',
+              }} />
+
+              <div style={{ fontSize: '28px', marginBottom: '12px' }}>{t.emoji}</div>
+
+              <h3
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '1.2rem',
+                  fontWeight: 500,
+                  color: '#F5F0E8',
+                  marginBottom: '6px',
+                }}
               >
-                <Send size={16} />
-                {sending === template.type ? 'Sending...' : `Send ${template.name}`}
+                {t.name}
+              </h3>
+              <p style={{ fontSize: '12px', color: '#7A756C', marginBottom: '16px', lineHeight: 1.5 }}>
+                {t.description}
+              </p>
+
+              {/* Preview */}
+              <div
+                style={{
+                  background: '#0D0D0D',
+                  border: '1px solid #1E1E1E',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '20px',
+                  borderLeft: '2px solid rgba(198,167,94,0.3)',
+                }}
+              >
+                <p style={{ fontSize: '11px', color: '#7A756C', fontStyle: 'italic', lineHeight: 1.6 }}>
+                  &ldquo;{t.preview}&rdquo;
+                </p>
+              </div>
+
+              <button
+                onClick={() => sendCampaign(t.type)}
+                disabled={!!sending}
+                className="lux-btn lux-btn-gold"
+                style={{ width: '100%', justifyContent: 'center', opacity: sending ? 0.6 : 1 }}
+              >
+                <Send size={14} />
+                {sending === t.type ? 'Sending...' : `Send ${t.name}`}
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Campaign History */}
+      {/* History */}
       <div>
-        <h2 className="font-display font-semibold text-lg mb-4">Campaign History</h2>
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <p className="lux-label" style={{ marginBottom: '16px' }}>Campaign History</p>
+        <div className="lux-card" style={{ overflow: 'hidden', padding: 0 }}>
+
+          {/* Head */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 0.8fr 0.8fr 1fr',
+              padding: '12px 24px',
+              borderBottom: '1px solid #1A1A1A',
+              background: '#0D0D0D',
+            }}
+          >
+            {['Campaign', 'Status', 'Sent', 'Failed', 'Date'].map((h) => (
+              <p key={h} className="lux-label">{h}</p>
+            ))}
+          </div>
+
           {loading ? (
-            <div className="py-12 text-center text-muted-foreground">Loading...</div>
+            <div style={{ padding: '48px', textAlign: 'center', color: '#7A756C' }}>Loading...</div>
           ) : campaigns.length === 0 ? (
-            <div className="py-12 text-center">
-              <Megaphone size={36} className="mx-auto text-muted-foreground mb-3" />
-              <p className="font-medium">No campaigns sent yet</p>
+            <div style={{ padding: '48px', textAlign: 'center', color: '#7A756C' }}>
+              <Send size={32} color="#3E3A34" style={{ margin: '0 auto 12px' }} />
+              <p>No campaigns sent yet</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border">
-                  <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground">Campaign</th>
-                  <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground">Status</th>
-                  <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground">Sent</th>
-                  <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground">Failed</th>
-                  <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {campaigns.map((c) => (
-                  <tr key={c.id} className="hover:bg-muted/20">
-                    <td className="px-6 py-4 font-medium">{c.name}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        c.status === 'SENT' ? 'bg-green-100 text-green-700' :
-                        c.status === 'FAILED' ? 'bg-red-100 text-red-600' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>{c.status}</span>
-                    </td>
-                    <td className="px-6 py-4 text-green-600 font-medium">{c.sentCount}</td>
-                    <td className="px-6 py-4 text-red-500">{c.failedCount}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{c.sentAt ? formatDate(c.sentAt) : formatDate(c.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            campaigns.map((c) => (
+              <div
+                key={c.id}
+                className="lux-table-row"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 0.8fr 0.8fr 1fr',
+                  padding: '14px 24px',
+                  alignItems: 'center',
+                }}
+              >
+                <p style={{ fontSize: '13px', fontWeight: 500, color: '#C8C4BC' }}>{c.name}</p>
+                <div>
+                  {c.status === 'SENT' ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#86EFAC' }}>
+                      <CheckCircle2 size={12} /> Sent
+                    </span>
+                  ) : c.status === 'FAILED' ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#FCA5A5' }}>
+                      <AlertCircle size={12} /> Failed
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#FCD34D' }}>
+                      <Clock size={12} /> Pending
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: '13px', color: '#86EFAC', fontWeight: 600 }}>{c.sentCount}</p>
+                <p style={{ fontSize: '13px', color: c.failedCount > 0 ? '#FCA5A5' : '#3E3A34' }}>
+                  {c.failedCount}
+                </p>
+                <p style={{ fontSize: '12px', color: '#7A756C' }}>
+                  {c.sentAt ? formatDate(c.sentAt) : formatDate(c.createdAt)}
+                </p>
+              </div>
+            ))
           )}
         </div>
       </div>

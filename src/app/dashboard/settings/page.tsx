@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, AlertCircle, Instagram, MessageCircle, Store } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Store, Instagram, MessageCircle, CreditCard, Eye, EyeOff } from 'lucide-react';
 
 type UserSettings = {
   shopName: string;
@@ -18,211 +18,351 @@ type UserSettings = {
   trialEndsAt: string | null;
 };
 
+function Section({
+  icon: Icon,
+  title,
+  subtitle,
+  iconColor = '#C6A75E',
+  iconBg = 'rgba(198,167,94,0.08)',
+  badge,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle: string;
+  iconColor?: string;
+  iconBg?: string;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="lux-card"
+      style={{ padding: '28px' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: iconBg,
+              border: `1px solid ${iconColor}20`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon size={18} color={iconColor} strokeWidth={1.5} />
+          </div>
+          <div>
+            <p style={{ fontSize: '15px', fontWeight: 500, color: '#F5F0E8', fontFamily: "'Cormorant Garamond', serif" }}>
+              {title}
+            </p>
+            <p style={{ fontSize: '11px', color: '#7A756C', marginTop: '2px' }}>{subtitle}</p>
+          </div>
+        </div>
+        {badge}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ConnectedBadge() {
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', gap: '5px',
+      background: 'rgba(134,239,172,0.08)',
+      border: '1px solid rgba(134,239,172,0.2)',
+      borderRadius: '999px',
+      padding: '4px 10px',
+      fontSize: '11px',
+      fontWeight: 600,
+      color: '#86EFAC',
+    }}>
+      <CheckCircle2 size={11} />
+      Connected
+    </span>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<string | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [showIgToken, setShowIgToken] = useState(false);
+  const [showWaToken, setShowWaToken] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings').then((r) => r.json()).then((data) => {
       setSettings(data.user);
       setForm({
-        shopName: data.user.shopName || '',
-        ownerName: data.user.ownerName || '',
-        phone: data.user.phone || '',
-        city: data.user.city || '',
-        instagramUserId: data.user.instagramUserId || '',
+        shopName: data.user.shopName ?? '',
+        ownerName: data.user.ownerName ?? '',
+        phone: data.user.phone ?? '',
+        city: data.user.city ?? '',
+        instagramUserId: data.user.instagramUserId ?? '',
         instagramAccessToken: '',
-        waPhoneNumberId: data.user.waPhoneNumberId || '',
+        waPhoneNumberId: data.user.waPhoneNumberId ?? '',
         waAccessToken: '',
-        waBusinessId: data.user.waBusinessId || '',
+        waBusinessId: data.user.waBusinessId ?? '',
       });
     });
   }, []);
 
   const save = async (section: string, fields: string[]) => {
-    setSaving(true);
+    setSaving(section);
     setSuccess('');
     setError('');
-    const payload = fields.reduce((acc, k) => ({ ...acc, [k]: form[k] }), {});
+    const payload = fields.reduce<Record<string, string>>((acc, k) => ({ ...acc, [k]: form[k] ?? '' }), {});
     const res = await fetch('/api/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
-    setSaving(false);
+    setSaving(null);
     if (!res.ok) { setError(data.error); return; }
-    setSuccess(`${section} saved successfully!`);
-    // Refresh settings
+    setSuccess(`${section} saved!`);
     const updated = await fetch('/api/settings').then((r) => r.json());
     setSettings(updated.user);
+    setTimeout(() => setSuccess(''), 3000);
   };
 
-  if (!settings) return <div className="py-16 text-center text-muted-foreground">Loading settings...</div>;
+  if (!settings) {
+    return (
+      <div style={{ padding: '64px', textAlign: 'center', color: '#7A756C' }}>
+        Loading settings...
+      </div>
+    );
+  }
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400 bg-white";
-  const labelClass = "block text-sm font-medium mb-1.5";
+  const F = (key: string) => ({
+    value: form[key] ?? '',
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: e.target.value }),
+  });
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="page-title">Settings</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Manage your shop profile and integrations</p>
+    <div className="fade-in">
+      <div style={{ marginBottom: '36px' }}>
+        <h1 className="lux-title">Settings</h1>
+        <p style={{ color: '#7A756C', marginTop: '6px', fontSize: '13px' }}>
+          Manage your shop profile and integrations
+        </p>
       </div>
 
+      {/* Global alerts */}
       {success && (
-        <div className="mb-6 bg-green-50 text-green-700 px-5 py-4 rounded-2xl border border-green-100 flex items-center gap-2">
-          <CheckCircle2 size={18} /> {success}
+        <div style={{
+          marginBottom: '20px',
+          background: 'rgba(134,239,172,0.06)',
+          border: '1px solid rgba(134,239,172,0.15)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'fadeIn 0.3s ease',
+        }}>
+          <CheckCircle2 size={16} color="#86EFAC" />
+          <span style={{ fontSize: '13px', color: '#86EFAC' }}>{success}</span>
         </div>
       )}
       {error && (
-        <div className="mb-6 bg-red-50 text-red-600 px-5 py-4 rounded-2xl border border-red-100 flex items-center gap-2">
-          <AlertCircle size={18} /> {error}
+        <div style={{
+          marginBottom: '20px',
+          background: 'rgba(239,68,68,0.06)',
+          border: '1px solid rgba(239,68,68,0.15)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}>
+          <AlertCircle size={16} color="#FCA5A5" />
+          <span style={{ fontSize: '13px', color: '#FCA5A5' }}>{error}</span>
         </div>
       )}
 
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
         {/* Shop Profile */}
-        <section className="bg-white rounded-2xl border border-border p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gold-100 flex items-center justify-center">
-              <Store size={18} className="text-gold-600" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-base">Shop Profile</h2>
-              <p className="text-xs text-muted-foreground">Basic info about your jewelry shop</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className={labelClass}>Shop Name</label>
-              <input className={inputClass} value={form.shopName || ''} onChange={(e) => setForm({ ...form, shopName: e.target.value })} />
-            </div>
-            <div>
-              <label className={labelClass}>Owner Name</label>
-              <input className={inputClass} value={form.ownerName || ''} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} />
-            </div>
-            <div>
-              <label className={labelClass}>Mobile Number</label>
-              <input className={inputClass} value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={10} />
-            </div>
-            <div>
-              <label className={labelClass}>City</label>
-              <input className={inputClass} value={form.city || ''} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-            </div>
+        <Section icon={Store} title="Shop Profile" subtitle="Basic info about your jewelry shop">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            {[
+              { key: 'shopName', label: 'Shop Name', placeholder: 'Meera Jewellers' },
+              { key: 'ownerName', label: 'Owner Name', placeholder: 'Rahul Gupta' },
+              { key: 'phone', label: 'Mobile Number', placeholder: '9876543210' },
+              { key: 'city', label: 'City', placeholder: 'Mumbai' },
+            ].map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A756C', marginBottom: '6px', display: 'block' }}>
+                  {label}
+                </label>
+                <input {...F(key)} placeholder={placeholder} className="lux-input" />
+              </div>
+            ))}
           </div>
           <button
             onClick={() => save('Shop profile', ['shopName', 'ownerName', 'phone', 'city'])}
-            disabled={saving}
-            className="bg-gold-500 hover:bg-gold-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
+            disabled={saving === 'Shop profile'}
+            className="lux-btn lux-btn-gold"
           >
-            {saving ? 'Saving...' : 'Save Profile'}
+            {saving === 'Shop profile' ? 'Saving...' : 'Save Profile'}
           </button>
-        </section>
+        </Section>
 
         {/* Instagram */}
-        <section className="bg-white rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center">
-                <Instagram size={18} className="text-pink-600" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-base">Instagram</h2>
-                <p className="text-xs text-muted-foreground">Connect to capture reel comments</p>
-              </div>
-            </div>
-            {settings.instagramConnected && (
-              <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-                <CheckCircle2 size={12} /> Connected
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+        <Section
+          icon={Instagram}
+          title="Instagram"
+          subtitle="Connect to capture reel comments automatically"
+          iconColor="#E1306C"
+          iconBg="rgba(225,48,108,0.08)"
+          badge={settings.instagramConnected ? <ConnectedBadge /> : undefined}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
-              <label className={labelClass}>Instagram User ID</label>
-              <input className={inputClass} value={form.instagramUserId || ''} onChange={(e) => setForm({ ...form, instagramUserId: e.target.value })} placeholder="17841400008460056" />
+              <label style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A756C', marginBottom: '6px', display: 'block' }}>
+                Instagram User ID
+              </label>
+              <input {...F('instagramUserId')} placeholder="17841400008460056" className="lux-input" />
             </div>
             <div>
-              <label className={labelClass}>Access Token</label>
-              <input className={inputClass} type="password" value={form.instagramAccessToken || ''} onChange={(e) => setForm({ ...form, instagramAccessToken: e.target.value })} placeholder="••••••••••••••••" />
-              <p className="text-xs text-muted-foreground mt-1">Get from Meta Business Suite</p>
+              <label style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A756C', marginBottom: '6px', display: 'block' }}>
+                Access Token
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  {...F('instagramAccessToken')}
+                  type={showIgToken ? 'text' : 'password'}
+                  placeholder="From Meta Business Suite"
+                  className="lux-input"
+                  style={{ paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowIgToken(!showIgToken)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#7A756C', cursor: 'pointer' }}
+                >
+                  {showIgToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
             </div>
           </div>
           <button
             onClick={() => save('Instagram', ['instagramUserId', 'instagramAccessToken'])}
-            disabled={saving}
-            className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
+            disabled={saving === 'Instagram'}
+            className="lux-btn"
+            style={{ background: 'linear-gradient(135deg, #E1306C, #C13584)', color: '#fff', boxShadow: '0 2px 12px rgba(225,48,108,0.25)' }}
           >
-            {saving ? 'Saving...' : 'Connect Instagram'}
+            {saving === 'Instagram' ? 'Saving...' : 'Connect Instagram'}
           </button>
-        </section>
+        </Section>
 
         {/* WhatsApp */}
-        <section className="bg-white rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                <MessageCircle size={18} className="text-green-600" />
+        <Section
+          icon={MessageCircle}
+          title="WhatsApp"
+          subtitle="Send alerts, follow-ups and campaign broadcasts"
+          iconColor="#25D366"
+          iconBg="rgba(37,211,102,0.08)"
+          badge={settings.waConnected ? <ConnectedBadge /> : undefined}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            {[
+              { key: 'waPhoneNumberId', label: 'Phone Number ID', placeholder: 'From Meta Business Manager' },
+              { key: 'waBusinessId', label: 'Business Account ID', placeholder: 'WABA ID' },
+            ].map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A756C', marginBottom: '6px', display: 'block' }}>
+                  {label}
+                </label>
+                <input {...F(key)} placeholder={placeholder} className="lux-input" />
               </div>
-              <div>
-                <h2 className="font-semibold text-base">WhatsApp</h2>
-                <p className="text-xs text-muted-foreground">Send alerts, follow-ups, and campaigns</p>
+            ))}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A756C', marginBottom: '6px', display: 'block' }}>
+                Access Token
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  {...F('waAccessToken')}
+                  type={showWaToken ? 'text' : 'password'}
+                  placeholder="••••••••••••••••"
+                  className="lux-input"
+                  style={{ paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowWaToken(!showWaToken)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#7A756C', cursor: 'pointer' }}
+                >
+                  {showWaToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
               </div>
-            </div>
-            {settings.waConnected && (
-              <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-                <CheckCircle2 size={12} /> Connected
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className={labelClass}>Phone Number ID</label>
-              <input className={inputClass} value={form.waPhoneNumberId || ''} onChange={(e) => setForm({ ...form, waPhoneNumberId: e.target.value })} placeholder="From Meta Business Manager" />
-            </div>
-            <div>
-              <label className={labelClass}>Business Account ID</label>
-              <input className={inputClass} value={form.waBusinessId || ''} onChange={(e) => setForm({ ...form, waBusinessId: e.target.value })} placeholder="WABA ID" />
-            </div>
-            <div className="col-span-2">
-              <label className={labelClass}>Access Token</label>
-              <input className={inputClass} type="password" value={form.waAccessToken || ''} onChange={(e) => setForm({ ...form, waAccessToken: e.target.value })} placeholder="••••••••••••••••" />
             </div>
           </div>
           <button
             onClick={() => save('WhatsApp', ['waPhoneNumberId', 'waAccessToken', 'waBusinessId'])}
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
+            disabled={saving === 'WhatsApp'}
+            className="lux-btn"
+            style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', color: '#fff', boxShadow: '0 2px 12px rgba(37,211,102,0.2)' }}
           >
-            {saving ? 'Saving...' : 'Connect WhatsApp'}
+            {saving === 'WhatsApp' ? 'Saving...' : 'Connect WhatsApp'}
           </button>
-        </section>
+        </Section>
 
         {/* Subscription */}
-        <section className="bg-white rounded-2xl border border-border p-6">
-          <h2 className="font-semibold text-base mb-3">Subscription</h2>
-          <div className="flex items-center gap-3">
-            <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
-              settings.subscriptionStatus === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-              settings.subscriptionStatus === 'TRIAL' ? 'bg-gold-100 text-gold-700' :
-              'bg-red-100 text-red-600'
-            }`}>
+        <Section
+          icon={CreditCard}
+          title="Subscription"
+          subtitle="Your current plan and billing status"
+          iconColor="#A78BFA"
+          iconBg="rgba(167,139,250,0.08)"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+            <span style={{
+              padding: '6px 14px',
+              borderRadius: '999px',
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              background: settings.subscriptionStatus === 'ACTIVE'
+                ? 'rgba(134,239,172,0.08)'
+                : settings.subscriptionStatus === 'TRIAL'
+                  ? 'rgba(198,167,94,0.08)'
+                  : 'rgba(239,68,68,0.08)',
+              color: settings.subscriptionStatus === 'ACTIVE'
+                ? '#86EFAC'
+                : settings.subscriptionStatus === 'TRIAL'
+                  ? '#C6A75E'
+                  : '#FCA5A5',
+              border: `1px solid ${settings.subscriptionStatus === 'ACTIVE'
+                ? 'rgba(134,239,172,0.2)'
+                : settings.subscriptionStatus === 'TRIAL'
+                  ? 'rgba(198,167,94,0.2)'
+                  : 'rgba(239,68,68,0.15)'}`,
+            }}>
               {settings.subscriptionStatus}
             </span>
             {settings.trialEndsAt && (
-              <span className="text-sm text-muted-foreground">
-                Trial ends: {new Date(settings.trialEndsAt).toLocaleDateString('en-IN')}
-              </span>
+              <p style={{ fontSize: '12px', color: '#7A756C' }}>
+                Trial ends {new Date(settings.trialEndsAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </p>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Billing integration coming soon. Contact us to upgrade.
+          <div className="gold-divider" style={{ marginBottom: '16px' }} />
+          <p style={{ fontSize: '12px', color: '#7A756C', lineHeight: 1.6 }}>
+            Razorpay billing integration coming soon.{' '}
+            <span style={{ color: '#C6A75E' }}>Contact us to upgrade your plan.</span>
           </p>
-        </section>
+        </Section>
       </div>
     </div>
   );

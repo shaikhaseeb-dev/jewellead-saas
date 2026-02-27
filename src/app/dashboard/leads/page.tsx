@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Phone, ExternalLink, Search } from 'lucide-react';
+import { Phone, ExternalLink, Search, SlidersHorizontal } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 type Lead = {
@@ -15,35 +15,47 @@ type Lead = {
   reel: { productName: string; url: string } | null;
 };
 
-const STATUS_OPTIONS = ['NEW', 'CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED', 'FOLLOW_UP'];
+const STATUS_OPTIONS = [
+  'NEW', 'CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED', 'FOLLOW_UP',
+] as const;
+type LeadStatus = (typeof STATUS_OPTIONS)[number];
 
-const STATUS_COLORS: Record<string, string> = {
-  NEW: 'bg-blue-100 text-blue-700',
-  CONTACTED: 'bg-yellow-100 text-yellow-700',
-  INTERESTED: 'bg-green-100 text-green-700',
-  NOT_INTERESTED: 'bg-red-100 text-red-600',
-  CONVERTED: 'bg-gold-100 text-gold-700',
-  FOLLOW_UP: 'bg-purple-100 text-purple-700',
+const STATUS_CONFIG: Record<LeadStatus, { label: string; className: string }> = {
+  NEW:           { label: 'New',         className: 'badge badge-new' },
+  CONTACTED:     { label: 'Contacted',   className: 'badge badge-contacted' },
+  INTERESTED:    { label: 'Interested',  className: 'badge badge-interested' },
+  FOLLOW_UP:     { label: 'Follow Up',   className: 'badge badge-followup' },
+  CONVERTED:     { label: 'Converted',   className: 'badge badge-converted' },
+  NOT_INTERESTED:{ label: 'Not Interest',className: 'badge badge-notinterested' },
 };
+
+const FILTERS: { label: string; value: string }[] = [
+  { label: 'All', value: '' },
+  { label: 'New', value: 'NEW' },
+  { label: 'Interested', value: 'INTERESTED' },
+  { label: 'Follow Up', value: 'FOLLOW_UP' },
+  { label: 'Converted', value: 'CONVERTED' },
+  { label: 'Not Interested', value: 'NOT_INTERESTED' },
+];
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ limit: '50' });
-    if (filter) params.set('status', filter);
+    const params = new URLSearchParams({ limit: '60' });
+    if (activeFilter) params.set('status', activeFilter);
     const res = await fetch(`/api/leads?${params}`);
     const data = await res.json();
-    setLeads(data.leads || []);
-    setTotal(data.total || 0);
+    setLeads(data.leads ?? []);
+    setTotal(data.total ?? 0);
     setLoading(false);
-  }, [filter]);
+  }, [activeFilter]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
@@ -62,138 +74,249 @@ export default function LeadsPage() {
     (l) =>
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.phone.includes(search) ||
-      (l.city || '').toLowerCase().includes(search.toLowerCase())
+      (l.city ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="fade-in">
+
+      {/* Header */}
+      <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="page-title">Leads</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{total} total leads captured</p>
+          <h1 className="lux-title">Leads</h1>
+          <p style={{ color: '#7A756C', marginTop: '6px', fontSize: '13px' }}>
+            {total} total leads captured
+          </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, city..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400 bg-white"
-          />
-        </div>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-border text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gold-400"
-        >
-          <option value="">All Status</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s.replace('_', ' ')}</option>
+      {/* Filter chips + search */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setActiveFilter(f.value)}
+              className={`filter-chip ${activeFilter === f.value ? 'active' : ''}`}
+            >
+              {f.label}
+            </button>
           ))}
-        </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {/* Search */}
+          <div style={{ position: 'relative', flex: 1, maxWidth: '380px' }}>
+            <Search
+              size={14}
+              color="#7A756C"
+              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, phone, city..."
+              className="lux-input"
+              style={{ paddingLeft: '38px' }}
+            />
+          </div>
+
+          <button
+            className="lux-btn lux-btn-ghost"
+            style={{ flexShrink: 0 }}
+          >
+            <SlidersHorizontal size={14} />
+            Filter
+          </button>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-border overflow-hidden">
+      <div className="lux-card" style={{ overflow: 'hidden', padding: 0 }}>
+
+        {/* Table head */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1.2fr 1fr 1.5fr 1.2fr 1fr 1.5fr',
+            padding: '12px 24px',
+            borderBottom: '1px solid #1A1A1A',
+            background: '#0D0D0D',
+          }}
+        >
+          {['Customer', 'Phone', 'City', 'Product', 'Status', 'Date', 'Notes'].map((h) => (
+            <p key={h} className="lux-label">{h}</p>
+          ))}
+        </div>
+
+        {/* Rows */}
         {loading ? (
-          <div className="py-16 text-center text-muted-foreground">Loading leads...</div>
+          <div style={{ padding: '64px', textAlign: 'center', color: '#7A756C' }}>
+            Loading leads...
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-4xl mb-2">📭</p>
-            <p className="font-medium text-foreground">No leads found</p>
+          <div style={{ padding: '64px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', marginBottom: '8px' }}>📭</p>
+            <p style={{ color: '#7A756C' }}>No leads found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border">
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Name</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Phone</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">City</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Product</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Status</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Date</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-gold-100 flex items-center justify-center text-xs font-bold text-gold-700 shrink-0">
-                          {lead.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-medium">{lead.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      {lead.phone ? (
-                        <a
-                          href={`tel:+91${lead.phone}`}
-                          className="flex items-center gap-1.5 text-gold-600 hover:text-gold-700 font-medium"
-                        >
-                          <Phone size={13} />
-                          {lead.phone}
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground italic">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-muted-foreground">{lead.city || '—'}</td>
-                    <td className="px-5 py-4">
-                      {lead.reel ? (
-                        <div className="flex items-center gap-1.5">
-                          <span>{lead.reel.productName}</span>
-                          <a
-                            href={lead.reel.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <ExternalLink size={12} />
-                          </a>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <select
-                        value={lead.status}
-                        disabled={updating === lead.id}
-                        onChange={(e) => updateLead(lead.id, { status: e.target.value })}
-                        className={`text-xs font-semibold px-2.5 py-1.5 rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-gold-400 ${STATUS_COLORS[lead.status] || ''}`}
+          filtered.map((lead) => {
+            const conf = STATUS_CONFIG[lead.status as LeadStatus];
+            const isConverted = lead.status === 'CONVERTED';
+
+            return (
+              <div
+                key={lead.id}
+                className="lux-table-row"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1.2fr 1fr 1.5fr 1.2fr 1fr 1.5fr',
+                  padding: '14px 24px',
+                  alignItems: 'center',
+                  borderLeft: isConverted ? '2px solid rgba(198,167,94,0.4)' : '2px solid transparent',
+                  opacity: updating === lead.id ? 0.6 : 1,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {/* Name */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '50%',
+                      background: isConverted
+                        ? 'linear-gradient(135deg, rgba(198,167,94,0.2), rgba(198,167,94,0.05))'
+                        : '#161616',
+                      border: isConverted ? '1px solid rgba(198,167,94,0.3)' : '1px solid #2A2A2A',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: isConverted ? '#C6A75E' : '#7A756C',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {lead.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#F5F0E8' }}>
+                    {lead.name}
+                  </span>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  {lead.phone ? (
+                    <a
+                      href={`tel:+91${lead.phone}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#C6A75E',
+                        fontSize: '13px',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <Phone size={11} />
+                      {lead.phone}
+                    </a>
+                  ) : (
+                    <span style={{ color: '#3E3A34', fontSize: '13px' }}>—</span>
+                  )}
+                </div>
+
+                {/* City */}
+                <p style={{ fontSize: '13px', color: '#7A756C' }}>{lead.city || '—'}</p>
+
+                {/* Product */}
+                <div>
+                  {lead.reel ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '13px', color: '#C8C4BC' }}>{lead.reel.productName}</span>
+                      <a
+                        href={lead.reel.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#3E3A34', transition: 'color 0.15s' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#C6A75E')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#3E3A34')}
                       >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-5 py-4 text-muted-foreground text-xs">
-                      {formatDate(lead.createdAt)}
-                    </td>
-                    <td className="px-5 py-4">
-                      <input
-                        defaultValue={lead.notes || ''}
-                        onBlur={(e) => {
-                          if (e.target.value !== lead.notes) {
-                            updateLead(lead.id, { notes: e.target.value });
-                          }
-                        }}
-                        placeholder="Add note..."
-                        className="w-40 text-sm px-2 py-1 rounded-lg border border-transparent hover:border-border focus:border-gold-400 focus:ring-2 focus:ring-gold-200 outline-none bg-transparent"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#3E3A34', fontSize: '13px' }}>—</span>
+                  )}
+                </div>
+
+                {/* Status dropdown */}
+                <div>
+                  <select
+                    value={lead.status}
+                    disabled={updating === lead.id}
+                    onChange={(e) => updateLead(lead.id, { status: e.target.value })}
+                    className="lux-select"
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      color: conf?.className.includes('converted') ? '#C6A75E'
+                           : conf?.className.includes('interested') ? '#C4B5FD'
+                           : conf?.className.includes('followup') ? '#FCD34D'
+                           : conf?.className.includes('new') ? '#93C5FD'
+                           : '#9CA3AF',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s} style={{ background: '#111', color: '#F5F0E8' }}>
+                        {STATUS_CONFIG[s].label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Date */}
+                <p style={{ fontSize: '12px', color: '#7A756C' }}>{formatDate(lead.createdAt)}</p>
+
+                {/* Notes */}
+                <input
+                  defaultValue={lead.notes ?? ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== lead.notes) {
+                      updateLead(lead.id, { notes: e.target.value });
+                    }
+                  }}
+                  placeholder="Add note..."
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    borderRadius: '8px',
+                    color: '#7A756C',
+                    fontSize: '12px',
+                    padding: '4px 8px',
+                    width: '100%',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    transition: 'border-color 0.2s, color 0.2s',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(198,167,94,0.3)';
+                    e.currentTarget.style.background = '#161616';
+                    e.currentTarget.style.color = '#F5F0E8';
+                  }}
+                  onBlurCapture={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#7A756C';
+                  }}
+                />
+              </div>
+            );
+          })
         )}
       </div>
     </div>

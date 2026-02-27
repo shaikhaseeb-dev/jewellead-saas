@@ -7,9 +7,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/auth/login');
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        background: '#0A0A0A',
+      }}
+    >
       <Sidebar shopName={user.shopName} />
-      <main className="flex-1 ml-64 p-8 max-w-6xl">
+      <main
+        style={{
+          flex: 1,
+          marginLeft: '232px',
+          padding: '40px 48px',
+          maxWidth: 'calc(100vw - 232px)',
+          minHeight: '100vh',
+        }}
+      >
         {children}
       </main>
     </div>

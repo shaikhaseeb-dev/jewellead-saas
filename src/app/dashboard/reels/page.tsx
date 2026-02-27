@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Film, Users } from 'lucide-react';
+import { Plus, Trash2, Film, Users, Tag, IndianRupee, Zap } from 'lucide-react';
 
 type Reel = {
   id: string;
@@ -23,18 +23,14 @@ export default function ReelsPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    url: '',
-    productName: '',
-    category: '',
-    price: '',
-    triggerWord: 'interested',
+    url: '', productName: '', category: '', price: '', triggerWord: 'interested',
   });
   const [error, setError] = useState('');
 
   const fetchReels = async () => {
     const res = await fetch('/api/reels');
     const data = await res.json();
-    setReels(data.reels || []);
+    setReels(data.reels ?? []);
     setLoading(false);
   };
 
@@ -58,108 +54,140 @@ export default function ReelsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this reel? Leads will still be kept.')) return;
+    if (!confirm('Remove this reel? Leads will be kept.')) return;
     await fetch(`/api/reels?id=${id}`, { method: 'DELETE' });
     fetchReels();
   };
 
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: '#7A756C',
+    marginBottom: '6px',
+    display: 'block',
+  };
+
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="fade-in">
+
+      {/* Header */}
+      <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="page-title">Reels</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Add Instagram reels to automatically capture leads from comments
+          <h1 className="lux-title">Reels</h1>
+          <p style={{ color: '#7A756C', marginTop: '6px', fontSize: '13px' }}>
+            Connect Instagram reels to auto-capture leads from comments
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-gold-500 hover:bg-gold-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+          className="lux-btn lux-btn-gold"
         >
-          <Plus size={18} />
+          <Plus size={15} strokeWidth={2} />
           Add Reel
         </button>
       </div>
 
       {/* Add Reel Form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-border p-6 mb-6">
-          <h3 className="font-display font-semibold text-lg mb-4">Add New Reel</h3>
-          <form onSubmit={handleAdd} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Instagram Reel URL</label>
-              <input
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="https://www.instagram.com/reel/ABC123/"
-                required
-                className="w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <div
+          className="lux-card"
+          style={{
+            padding: '28px',
+            marginBottom: '28px',
+            borderColor: 'rgba(198,167,94,0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem', color: '#F5F0E8' }}>
+              Add New Reel
+            </h3>
+            <button
+              onClick={() => { setShowForm(false); setError(''); }}
+              style={{ background: 'none', border: 'none', color: '#7A756C', cursor: 'pointer', fontSize: '20px', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+
+          <form onSubmit={handleAdd}>
+            <div style={{ display: 'grid', gap: '16px' }}>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Product Name</label>
+                <label style={labelStyle}>Instagram Reel URL</label>
                 <input
-                  value={form.productName}
-                  onChange={(e) => setForm({ ...form, productName: e.target.value })}
-                  placeholder="Gold Kundan Necklace"
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  placeholder="https://www.instagram.com/reel/ABC123/"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
+                  className="lux-input"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Category</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400 bg-white"
-                >
-                  <option value="">Select category</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Product Name</label>
+                  <input
+                    value={form.productName}
+                    onChange={(e) => setForm({ ...form, productName: e.target.value })}
+                    placeholder="Gold Kundan Necklace"
+                    required
+                    className="lux-input"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Category</label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    required
+                    className="lux-select"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="">Select category</option>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Price (₹) <span className="text-muted-foreground font-normal">(optional)</span></label>
-                <input
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  type="number"
-                  placeholder="25000"
-                  className="w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Trigger Word</label>
-                <input
-                  value={form.triggerWord}
-                  onChange={(e) => setForm({ ...form, triggerWord: e.target.value })}
-                  placeholder="interested"
-                  required
-                  className="w-full px-4 py-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-gold-400"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Comments containing this word will trigger a DM</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Price (₹) — optional</label>
+                  <input
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    type="number"
+                    placeholder="25000"
+                    className="lux-input"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Trigger Word</label>
+                  <input
+                    value={form.triggerWord}
+                    onChange={(e) => setForm({ ...form, triggerWord: e.target.value })}
+                    placeholder="interested"
+                    required
+                    className="lux-input"
+                  />
+                </div>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>
+              <div style={{ marginTop: '16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '10px', padding: '12px 16px', color: '#FCA5A5', fontSize: '13px' }}>
+                {error}
+              </div>
             )}
 
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="bg-gold-500 hover:bg-gold-600 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors disabled:opacity-60"
-              >
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button type="submit" disabled={submitting} className="lux-btn lux-btn-gold">
                 {submitting ? 'Adding...' : 'Add Reel'}
               </button>
               <button
                 type="button"
                 onClick={() => { setShowForm(false); setError(''); }}
-                className="px-6 py-2.5 rounded-xl border border-border hover:bg-muted transition-colors text-sm font-medium"
+                className="lux-btn lux-btn-ghost"
               >
                 Cancel
               </button>
@@ -168,51 +196,187 @@ export default function ReelsPage() {
         </div>
       )}
 
-      {/* Reels List */}
+      {/* Reel Cards Grid */}
       {loading ? (
-        <div className="py-16 text-center text-muted-foreground">Loading reels...</div>
+        <div style={{ padding: '64px', textAlign: 'center', color: '#7A756C' }}>Loading reels...</div>
       ) : reels.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-border py-16 text-center">
-          <Film size={40} className="mx-auto text-muted-foreground mb-3" />
-          <p className="font-medium text-foreground">No reels added yet</p>
-          <p className="text-sm text-muted-foreground mt-1">Add your first reel to start capturing leads automatically</p>
+        <div
+          className="lux-card"
+          style={{ padding: '64px', textAlign: 'center' }}
+        >
+          <Film size={40} color="#3E3A34" style={{ margin: '0 auto 12px' }} />
+          <p style={{ color: '#7A756C', fontSize: '14px' }}>No reels added yet</p>
+          <p style={{ color: '#3E3A34', fontSize: '12px', marginTop: '4px' }}>
+            Add your first reel to start capturing leads automatically
+          </p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div
+          className="stagger"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}
+        >
           {reels.map((reel) => (
-            <div key={reel.id} className="bg-white rounded-2xl border border-border p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gold-100 flex items-center justify-center shrink-0">
-                <Film size={22} className="text-gold-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground">{reel.productName}</h3>
-                  <span className="gold-badge">{reel.category}</span>
-                  {reel.price && <span className="text-xs text-muted-foreground">₹{reel.price.toLocaleString('en-IN')}</span>}
-                </div>
-                <a
-                  href={reel.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-gold-600 hover:underline truncate block max-w-xs"
+            <div
+              key={reel.id}
+              style={{
+                background: reel.active ? '#111111' : '#0E0E0E',
+                borderRadius: '16px',
+                border: reel.active
+                  ? '1px solid rgba(198,167,94,0.3)'
+                  : '1px solid #1A1A1A',
+                padding: '24px',
+                boxShadow: reel.active
+                  ? '0 0 0 1px rgba(198,167,94,0.05), 0 4px 20px rgba(198,167,94,0.06)'
+                  : 'var(--shadow-card)',
+                transition: 'all 0.25s ease',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = reel.active
+                  ? '0 8px 32px rgba(198,167,94,0.1)'
+                  : '0 8px 24px rgba(0,0,0,0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = reel.active
+                  ? '0 0 0 1px rgba(198,167,94,0.05), 0 4px 20px rgba(198,167,94,0.06)'
+                  : 'var(--shadow-card)';
+              }}
+            >
+              {/* Active glow */}
+              {reel.active && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0,
+                  height: '2px',
+                  background: 'linear-gradient(90deg, transparent, rgba(198,167,94,0.6), transparent)',
+                }} />
+              )}
+
+              {/* Card Header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: reel.active ? 'rgba(198,167,94,0.1)' : '#161616',
+                    border: reel.active ? '1px solid rgba(198,167,94,0.2)' : '1px solid #2A2A2A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  {reel.url}
-                </a>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Trigger: &quot;{reel.triggerWord}&quot;
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
-                  <Users size={13} />
-                  <span className="text-sm font-semibold">{reel._count.leads} leads</span>
+                  <Film size={18} color={reel.active ? '#C6A75E' : '#3E3A34'} strokeWidth={1.5} />
                 </div>
+
                 <button
                   onClick={() => handleDelete(reel.id)}
-                  className="p-2 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#3E3A34',
+                    cursor: 'pointer',
+                    padding: '6px',
+                    borderRadius: '8px',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+                    e.currentTarget.style.color = '#FCA5A5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'none';
+                    e.currentTarget.style.color = '#3E3A34';
+                  }}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
+              </div>
+
+              {/* Product Name */}
+              <h3
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '1.2rem',
+                  fontWeight: 500,
+                  color: '#F5F0E8',
+                  marginBottom: '4px',
+                  lineHeight: 1.3,
+                }}
+              >
+                {reel.productName}
+              </h3>
+              <a
+                href={reel.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  fontSize: '11px',
+                  color: '#3E3A34',
+                  display: 'block',
+                  marginBottom: '16px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  textDecoration: 'none',
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#C6A75E')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#3E3A34')}
+              >
+                {reel.url}
+              </a>
+
+              <div className="gold-divider" style={{ marginBottom: '16px' }} />
+
+              {/* Meta Row */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Tag size={11} color="#7A756C" />
+                  <span style={{ fontSize: '11px', color: '#7A756C' }}>{reel.category}</span>
+                </div>
+                {reel.price && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <IndianRupee size={11} color="#7A756C" />
+                    <span style={{ fontSize: '11px', color: '#7A756C' }}>
+                      {reel.price.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Zap size={11} color="#7A756C" />
+                  <span style={{ fontSize: '11px', color: '#7A756C' }}>&quot;{reel.triggerWord}&quot;</span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={13} color={reel._count.leads > 0 ? '#C6A75E' : '#3E3A34'} />
+                  <span
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: reel._count.leads > 0 ? '#C6A75E' : '#3E3A34',
+                    }}
+                  >
+                    {reel._count.leads}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#3E3A34' }}>leads</span>
+                </div>
+
+                {/* Active toggle */}
+                <label className="lux-toggle">
+                  <input
+                    type="checkbox"
+                    defaultChecked={reel.active}
+                    onChange={() => {/* extend API if needed */}}
+                  />
+                  <span className="lux-toggle-slider" />
+                </label>
               </div>
             </div>
           ))}

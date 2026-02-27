@@ -52,3 +52,4 @@ export function matchesTriggerWord(comment: string, triggerWord: string): boolea
   const trigger = triggerWord.toLowerCase().trim();
   return normalized.includes(trigger);
 }
+
