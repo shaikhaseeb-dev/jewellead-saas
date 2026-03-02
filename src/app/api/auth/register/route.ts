@@ -5,6 +5,7 @@ import { registerSchema } from '@/lib/validations';
 import { rateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
 import { addDays } from 'date-fns';
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, { max: 5, windowMs: 60_000 });
