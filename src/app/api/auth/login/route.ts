@@ -4,6 +4,7 @@ import { verifyPassword, createToken, setAuthCookie } from '@/lib/auth';
 import { loginSchema } from '@/lib/validations';
 import { rateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, { max: 10, windowMs: 60_000 });
