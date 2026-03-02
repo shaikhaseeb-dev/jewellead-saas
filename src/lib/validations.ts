@@ -32,8 +32,9 @@ export const reelSchema = z.object({
 });
 
 export const updateLeadSchema = z.object({
-  status: z.enum(['NEW', 'CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED', 'FOLLOW_UP']).optional(),
-  notes: z.string().max(500).optional(),
+  status:     z.enum(['NEW', 'CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED', 'FOLLOW_UP']).optional(),
+  notes:      z.string().max(500).optional(),
+  saleAmount: z.number().positive().optional().nullable(),
 });
 
 export const campaignSchema = z.object({
@@ -41,13 +42,13 @@ export const campaignSchema = z.object({
 });
 
 export const settingsSchema = z.object({
-  shopName: z.string().min(2).max(100).optional(),
-  ownerName: z.string().min(2).max(100).optional(),
-  phone: z.string().regex(/^[6-9]\d{9}$/).optional(),
-  city: z.string().max(100).optional(),
-  instagramUserId: z.string().optional(),
-  instagramAccessToken: z.string().optional(),
-  waPhoneNumberId: z.string().optional(),
-  waAccessToken: z.string().optional(),
-  waBusinessId: z.string().optional(),
+  shopName:            z.string().min(2).max(100).optional(),
+  ownerName:           z.string().min(2).max(100).optional(),
+  phone:               z.string().regex(/^[6-9]\d{9}$/).optional(),
+  city:                z.string().max(100).optional(),
+  instagramUserId:     z.string().optional(),
+  instagramAccessToken:z.string().optional(),
+  waPhoneNumberId:     z.string().optional(),
+  waAccessToken:       z.string().optional(),
+  waBusinessId:        z.string().optional(),
 });

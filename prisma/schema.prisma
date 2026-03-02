@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -76,10 +77,12 @@ model Lead {
   phone         String
   city          String?
   instagramUser String?
-  
+  commentId     String?    // Instagram comment ID — used by polling to prevent duplicate processing
+
   status        LeadStatus @default(NEW)
   notes         String?
-  
+  saleAmount    Float?     // Actual sale value — set when lead is CONVERTED
+
   followUpSentAt DateTime?
   convertedAt    DateTime?
   
@@ -94,6 +97,7 @@ model Lead {
   @@index([reelId])
   @@index([status])
   @@index([createdAt])
+  @@index([commentId])
 }
 
 model FollowUpLog {
