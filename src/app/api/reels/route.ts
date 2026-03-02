@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
 import { reelSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);

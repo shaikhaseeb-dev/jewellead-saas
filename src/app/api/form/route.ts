@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rateLimit';
 import { decrypt } from '@/lib/encryption';
 import { sendOwnerAlert } from '@/lib/whatsapp';
 import { logger } from '@/lib/logger';
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, { max: 5, windowMs: 60_000 });

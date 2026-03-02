@@ -7,6 +7,7 @@ import { sendWhatsAppTemplate, buildFollowUpComponents } from '@/lib/whatsapp';
 import { logger } from '@/lib/logger';
 import { subDays } from 'date-fns';
 
+
 export async function POST(req: NextRequest) {
   // Protect cron with secret
   const secret = req.headers.get('x-cron-secret');

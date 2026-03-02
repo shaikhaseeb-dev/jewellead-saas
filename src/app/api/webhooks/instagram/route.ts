@@ -5,6 +5,7 @@ import { decrypt } from '@/lib/encryption';
 import { rateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
 
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

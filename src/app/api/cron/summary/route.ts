@@ -5,6 +5,7 @@ import { sendWhatsAppTemplate, buildSummaryComponents } from '@/lib/whatsapp';
 import { logger } from '@/lib/logger';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 
+export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const secret = req.headers.get('x-cron-secret');
   if (secret !== process.env.CRON_SECRET) {

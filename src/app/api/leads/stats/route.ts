@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
 import { startOfDay, subDays } from 'date-fns';
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);

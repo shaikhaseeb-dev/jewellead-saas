@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth';
 import { settingsSchema } from '@/lib/validations';
 import { encrypt } from '@/lib/encryption';
 import { logger } from '@/lib/logger';
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);

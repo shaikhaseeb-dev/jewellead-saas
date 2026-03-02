@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
+export const dynamic = "force-dynamic";
 
 /* ─── Guard: hard 404 in production ──────────────────────────────────────── */
 if (process.env.NODE_ENV !== 'development') {
